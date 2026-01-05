@@ -160,6 +160,13 @@
         "push": {
           "label": "Push Notifications",
           "helper": "Show system notifications when task attempts finish running."
+        },
+        "slack": {
+          "label": "Slack Notifications",
+          "helper": "Post task completion updates to a Slack channel.",
+          "webhookLabel": "Slack Webhook URL",
+          "webhookPlaceholder": "https://hooks.slack.com/services/...",
+          "webhookHelper": "Use a Slack incoming webhook URL for the channel you want to notify."
         }
       },
       "privacy": {

@@ -1,5 +1,6 @@
 use std::sync::{Arc, OnceLock};
 
+use serde_json::json;
 use tokio::sync::RwLock;
 use utils;
 
@@ -33,6 +34,21 @@ impl NotificationService {
 
         if config.push_enabled {
             Self::send_push_notification(title, message).await;
+        }
+
+        if config.slack_enabled {
+            if let Some(webhook_url) = config
+                .slack_webhook_url
+                .as_ref()
+                .map(|url| url.trim())
+                .filter(|url| !url.is_empty())
+            {
+                Self::send_slack_notification(webhook_url.to_string(), title, message).await;
+            } else {
+                tracing::warn!(
+                    "Slack notifications enabled but webhook URL is missing"
+                );
+            }
         }
     }
 
@@ -171,6 +187,33 @@ impl NotificationService {
             .arg("-Message")
             .arg(message)
             .spawn();
+    }
+
+    /// Send Slack notification using incoming webhook
+    async fn send_slack_notification(webhook_url: String, title: &str, message: &str) {
+        let text = format!("{title}\n{message}");
+
+        tokio::spawn(async move {
+            let client = reqwest::Client::new();
+            let response = client
+                .post(&webhook_url)
+                .json(&json!({ "text": text }))
+                .send()
+                .await;
+
+            match response {
+                Ok(resp) if resp.status().is_success() => {}
+                Ok(resp) => {
+                    tracing::error!(
+                        "Slack notification failed with status: {}",
+                        resp.status()
+                    );
+                }
+                Err(err) => {
+                    tracing::error!("Failed to send Slack notification: {}", err);
+                }
+            }
+        });
     }
 
     /// Get WSL root path via PowerShell (cached)

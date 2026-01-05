@@ -631,6 +631,53 @@ export function GeneralSettings() {
               </p>
             </div>
           </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="slack-notifications"
+              checked={draft?.notifications.slack_enabled}
+              onCheckedChange={(checked: boolean) =>
+                updateDraft({
+                  notifications: {
+                    ...draft!.notifications,
+                    slack_enabled: checked,
+                  },
+                })
+              }
+            />
+            <div className="space-y-0.5">
+              <Label htmlFor="slack-notifications" className="cursor-pointer">
+                {t('settings.general.notifications.slack.label')}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {t('settings.general.notifications.slack.helper')}
+              </p>
+            </div>
+          </div>
+          {draft?.notifications.slack_enabled && (
+            <div className="ml-6 space-y-2">
+              <Label htmlFor="slack-webhook-url">
+                {t('settings.general.notifications.slack.webhookLabel')}
+              </Label>
+              <Input
+                id="slack-webhook-url"
+                placeholder={t(
+                  'settings.general.notifications.slack.webhookPlaceholder'
+                )}
+                value={draft.notifications.slack_webhook_url || ''}
+                onChange={(e) =>
+                  updateDraft({
+                    notifications: {
+                      ...draft.notifications,
+                      slack_webhook_url: e.target.value || null,
+                    },
+                  })
+                }
+              />
+              <p className="text-sm text-muted-foreground">
+                {t('settings.general.notifications.slack.webhookHelper')}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

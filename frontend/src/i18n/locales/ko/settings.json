@@ -160,6 +160,13 @@
         "push": {
           "label": "푸시 알림",
           "helper": "작업 시도가 완료되면 시스템 알림을 표시합니다."
+        },
+        "slack": {
+          "label": "Slack 알림",
+          "helper": "작업 완료 업데이트를 Slack 채널에 게시합니다.",
+          "webhookLabel": "Slack Webhook URL",
+          "webhookPlaceholder": "https://hooks.slack.com/services/...",
+          "webhookHelper": "알림을 보낼 채널의 Slack 인커밍 Webhook URL을 사용하세요."
         }
       },
       "privacy": {

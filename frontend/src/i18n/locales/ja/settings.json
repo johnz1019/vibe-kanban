@@ -160,6 +160,13 @@
         "push": {
           "label": "プッシュ通知",
           "helper": "タスク試行の実行が完了したときにシステム通知を表示します。"
+        },
+        "slack": {
+          "label": "Slack通知",
+          "helper": "タスク完了の更新をSlackチャンネルに投稿します。",
+          "webhookLabel": "Slack Webhook URL",
+          "webhookPlaceholder": "https://hooks.slack.com/services/...",
+          "webhookHelper": "通知したいチャンネルのSlackインカミングWebhook URLを使用してください。"
         }
       },
       "privacy": {

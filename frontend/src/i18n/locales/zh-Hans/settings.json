@@ -160,6 +160,13 @@
         "push": {
           "label": "推送通知",
           "helper": "任务尝试完成运行时显示系统通知。"
+        },
+        "slack": {
+          "label": "Slack 通知",
+          "helper": "将任务完成更新发送到 Slack 频道。",
+          "webhookLabel": "Slack Webhook URL",
+          "webhookPlaceholder": "https://hooks.slack.com/services/...",
+          "webhookHelper": "使用要通知的频道的 Slack Incoming Webhook URL。"
         }
       },
       "privacy": {

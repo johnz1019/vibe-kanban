@@ -160,6 +160,13 @@
         "push": {
           "label": "Notificaciones Push",
           "helper": "Muestra notificaciones del sistema cuando las tareas terminan de ejecutarse."
+        },
+        "slack": {
+          "label": "Notificaciones de Slack",
+          "helper": "Publica actualizaciones de finalización de tareas en un canal de Slack.",
+          "webhookLabel": "URL de Webhook de Slack",
+          "webhookPlaceholder": "https://hooks.slack.com/services/...",
+          "webhookHelper": "Usa un webhook entrante de Slack para el canal que quieres notificar."
         }
       },
       "privacy": {
