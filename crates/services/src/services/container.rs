@@ -203,14 +203,14 @@ pub trait ContainerService {
 
         let message = match ctx.execution_process.status {
             ExecutionProcessStatus::Completed => {
-                let status = "成功";
+                let status = "✅";
                 match task_url {
                     Some(url) => format!("状态: {status}\n点击查看: {url}"),
                     None => format!("状态: {status}"),
                 }
             }
             ExecutionProcessStatus::Failed => {
-                let status = "失败";
+                let status = "❌";
                 match task_url {
                     Some(url) => format!("状态: {status}\n点击查看: {url}"),
                     None => format!("状态: {status}"),

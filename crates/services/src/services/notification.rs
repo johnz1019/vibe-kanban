@@ -203,13 +203,63 @@ impl NotificationService {
 
     /// Send Slack notification using incoming webhook
     async fn send_slack_notification(webhook_url: String, title: &str, message: &str) {
-        let text = format!("{title}\n{message}");
+        fn escape_mrkdwn(s: &str) -> String {
+            s.replace('\\', r"\\")
+                .replace('*', r"\*")
+                .replace('_', r"\_")
+                .replace('~', r"\~")
+                .replace('`', r"\`")
+        }
+
+        fn extract_url(s: &str) -> Option<String> {
+            let s = s.trim();
+
+            // Markdown-style: [text](url)
+            if let Some(open) = s.find("](")
+                && s.starts_with('[')
+                && s.ends_with(')')
+            {
+                let url = &s[open + 2..s.len() - 1];
+                let url = url.trim();
+                if url.starts_with("http://") || url.starts_with("https://") {
+                    return Some(url.to_string());
+                }
+            }
+
+            // Raw URL token
+            for token in s.split_whitespace() {
+                if token.starts_with("http://") || token.starts_with("https://") {
+                    return Some(token.trim_matches(|c: char| c == ')' || c == ']').to_string());
+                }
+            }
+
+            None
+        }
+
+        fn format_slack_message(message: &str) -> String {
+            let mut out = Vec::new();
+            for line in message.lines() {
+                let trimmed = line.trim();
+                if let Some(rest) = trimmed.strip_prefix("点击查看:") {
+                    if let Some(url) = extract_url(rest) {
+                        out.push(format!("点击查看: <{url}|点击查看>"));
+                        continue;
+                    }
+                }
+                out.push(trimmed.to_string());
+            }
+            out.join("\n")
+        }
+
+        let title = escape_mrkdwn(title);
+        let message = format_slack_message(message);
+        let text = format!("*{title}*\n{message}");
 
         tokio::spawn(async move {
             let client = reqwest::Client::new();
             let response = client
                 .post(&webhook_url)
-                .json(&json!({ "text": text }))
+                .json(&json!({ "text": text, "mrkdwn": true }))
                 .send()
                 .await;
 
