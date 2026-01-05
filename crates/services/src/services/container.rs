@@ -195,7 +195,7 @@ pub trait ContainerService {
             return;
         }
 
-        let title = ctx.task.title.clone();
+        let title = format!("[{}]: {}", ctx.project.name, ctx.task.title);
         let task_url = self
             .notification_service()
             .kanban_task_url(ctx.project.id, ctx.task.id)

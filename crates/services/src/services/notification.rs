@@ -214,6 +214,17 @@ impl NotificationService {
         fn extract_url(s: &str) -> Option<String> {
             let s = s.trim();
 
+            // Slack-style: <url|text> or <url>
+            if let Some(stripped) = s.strip_prefix('<')
+                && let Some(close) = stripped.find('>')
+            {
+                let inner = &stripped[..close];
+                let url = inner.split('|').next().unwrap_or("").trim();
+                if url.starts_with("http://") || url.starts_with("https://") {
+                    return Some(url.to_string());
+                }
+            }
+
             // Markdown-style: [text](url)
             if let Some(open) = s.find("](")
                 && s.starts_with('[')
@@ -242,7 +253,7 @@ impl NotificationService {
                 let trimmed = line.trim();
                 if let Some(rest) = trimmed.strip_prefix("点击查看:") {
                     if let Some(url) = extract_url(rest) {
-                        out.push(format!("点击查看: <{url}|点击查看>"));
+                        out.push(format!("<{url}|点击查看>"));
                         continue;
                     }
                 }

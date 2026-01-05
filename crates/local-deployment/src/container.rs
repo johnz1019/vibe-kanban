@@ -411,6 +411,8 @@ impl LocalContainerService {
             }
 
             if let Ok(ctx) = ExecutionProcess::load_context(&db.pool, exec_id).await {
+                let mut finalized = false;
+
                 // Update executor session summary if available
                 if let Err(e) = container.update_executor_session_summary(&exec_id).await {
                     tracing::warn!("Failed to update executor session summary: {}", e);
@@ -461,11 +463,14 @@ impl LocalContainerService {
                         );
 
                         // Manually finalize task since we're bypassing normal execution flow
-                        container.finalize_task(publisher.as_ref().ok(), &ctx).await;
+                        if !finalized {
+                            finalized = true;
+                            container.finalize_task(publisher.as_ref().ok(), &ctx).await;
+                        }
                     }
                 }
 
-                if container.should_finalize(&ctx) {
+                if !finalized && container.should_finalize(&ctx) {
                     // Only execute queued messages if the execution succeeded
                     // If it failed or was killed, just clear the queue and finalize
                     let should_execute_queued = !matches!(
