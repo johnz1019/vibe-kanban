@@ -167,7 +167,13 @@ pub trait ContainerService {
         share_publisher: Option<&SharePublisher>,
         ctx: &ExecutionContext,
     ) {
-        match Task::update_status(&self.db().pool, ctx.task.id, TaskStatus::InReview).await {
+        match Task::update_status(
+            &self.db().pool,
+            ctx.task.id,
+            TaskStatus::InReview,
+        )
+        .await
+        {
             Ok(_) => {
                 if let Some(publisher) = share_publisher
                     && let Err(err) = publisher.update_shared_task_by_id(ctx.task.id).await
@@ -182,23 +188,34 @@ pub trait ContainerService {
             Err(e) => {
                 tracing::error!("Failed to update task status to InReview: {e}");
             }
-        }
+        };
 
         // Skip notification if process was intentionally killed by user
         if matches!(ctx.execution_process.status, ExecutionProcessStatus::Killed) {
             return;
         }
 
-        let title = format!("Task Complete: {}", ctx.task.title);
+        let title = ctx.task.title.clone();
+        let task_url = self
+            .notification_service()
+            .kanban_task_url(ctx.project.id, ctx.task.id)
+            .await;
+
         let message = match ctx.execution_process.status {
-            ExecutionProcessStatus::Completed => format!(
-                "✅ '{}' completed successfully\nBranch: {:?}\nExecutor: {:?}",
-                ctx.task.title, ctx.workspace.branch, ctx.session.executor
-            ),
-            ExecutionProcessStatus::Failed => format!(
-                "❌ '{}' execution failed\nBranch: {:?}\nExecutor: {:?}",
-                ctx.task.title, ctx.workspace.branch, ctx.session.executor
-            ),
+            ExecutionProcessStatus::Completed => {
+                let status = "成功";
+                match task_url {
+                    Some(url) => format!("状态: {status}\n点击查看: {url}"),
+                    None => format!("状态: {status}"),
+                }
+            }
+            ExecutionProcessStatus::Failed => {
+                let status = "失败";
+                match task_url {
+                    Some(url) => format!("状态: {status}\n点击查看: {url}"),
+                    None => format!("状态: {status}"),
+                }
+            }
             _ => {
                 tracing::warn!(
                     "Tried to notify workspace completion for {} but process is still running!",

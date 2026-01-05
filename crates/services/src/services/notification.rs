@@ -1,10 +1,17 @@
 use std::sync::{Arc, OnceLock};
 
+use serde::Deserialize;
 use serde_json::json;
 use tokio::sync::RwLock;
 use utils;
+use uuid::Uuid;
 
 use crate::services::config::{Config, NotificationConfig, SoundFile};
+
+#[derive(Debug, Deserialize)]
+struct DevPorts {
+    frontend: u16,
+}
 
 /// Service for handling cross-platform notifications including sound alerts and push notifications
 #[derive(Debug, Clone)]
@@ -18,6 +25,11 @@ static WSL_ROOT_PATH_CACHE: OnceLock<Option<String>> = OnceLock::new();
 impl NotificationService {
     pub fn new(config: Arc<RwLock<Config>>) -> Self {
         Self { config }
+    }
+
+    pub async fn kanban_task_url(&self, project_id: Uuid, task_id: Uuid) -> Option<String> {
+        let base_url = Self::resolve_kanban_base_url().await?;
+        Some(format!("{base_url}/projects/{project_id}/tasks/{task_id}"))
     }
 
     /// Send both sound and push notifications if enabled
@@ -214,6 +226,48 @@ impl NotificationService {
                 }
             }
         });
+    }
+
+    async fn resolve_kanban_base_url() -> Option<String> {
+        fn normalize(s: String) -> Option<String> {
+            let trimmed = s.trim().trim_end_matches('/').trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        }
+
+        if let Ok(url) = std::env::var("SERVER_PUBLIC_BASE_URL")
+            && let Some(url) = normalize(url)
+        {
+            return Some(url);
+        }
+
+        if let Ok(url) = std::env::var("VITE_APP_BASE_URL")
+            && let Some(url) = normalize(url)
+        {
+            return Some(url);
+        }
+
+        // Local dev: prefer the Vite dev server (frontend), if present.
+        if let Ok(content) = tokio::fs::read_to_string(".dev-ports.json").await
+            && let Ok(ports) = serde_json::from_str::<DevPorts>(&content)
+        {
+            return Some(format!("http://127.0.0.1:{}", ports.frontend));
+        }
+
+        // Fallback: use backend port discovery (used by packaged/server mode).
+        if let Ok(port) = utils::port_file::read_port_file("vibe-kanban").await {
+            let host = std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+            let host = match host.as_str() {
+                "0.0.0.0" | "::" => "127.0.0.1",
+                other => other,
+            };
+            return Some(format!("http://{host}:{port}"));
+        }
+
+        None
     }
 
     /// Get WSL root path via PowerShell (cached)
